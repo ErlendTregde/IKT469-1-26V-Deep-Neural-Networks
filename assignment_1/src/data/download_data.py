@@ -2,14 +2,12 @@ import kagglehub
 import shutil
 from pathlib import Path
 
-# Define the target directory
 TARGET_DIR = Path("/home/coder/IKT469-1-26V-Deep-Neural-Networks/assignment_1/data/winedataset")
 
 path = kagglehub.dataset_download("yasserh/wine-quality-dataset")
 
 print(f"Dataset downloaded to: {path}")
 
-# Copy all files from the downloaded path to our target directory
 source_path = Path(path)
 for file in source_path.glob("*"):
     if file.is_file():
