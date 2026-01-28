@@ -46,7 +46,6 @@ context_vector = attention_weights @ V
 print("\nFull self-attention context shape:", context_vector.shape)
 print(context_vector)
 
-# Visualize the attention weights
 plt.figure(figsize=(8, 6))
 plt.imshow(attention_weights.detach().cpu().numpy(), aspect="auto", cmap="viridis")
 plt.xticks(range(T), tokens, rotation=45, ha="right")

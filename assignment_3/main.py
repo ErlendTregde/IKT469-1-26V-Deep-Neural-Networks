@@ -1,8 +1,3 @@
-"""
-YOLO vs RT-DETR Object Detection Comparison on Pascal VOC
-Minimum implementation for the assignment
-"""
-
 import os
 import torch
 import numpy as np
@@ -13,23 +8,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image
 from tqdm import tqdm
-
-# Install required packages (run once):
-# pip install ultralytics torch torchvision matplotlib pillow tqdm
-
 from ultralytics import YOLO
 
-# ============================================================================
-# STEP 1: Find Pascal VOC 2007 Dataset
-# ============================================================================
-
-# VOC classes in order
 VOC_CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 
                'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 
                'train', 'tvmonitor']
 
-# COCO class names (what YOLO/RT-DETR use)
 COCO_CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 
                 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 
                 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 
@@ -43,12 +28,9 @@ COCO_CLASSES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tr
                 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 
                 'toothbrush']
 
-# Map COCO class indices to VOC class indices
 COCO_TO_VOC = {}
 for voc_idx, voc_name in enumerate(VOC_CLASSES):
-    # Find matching COCO class
     for coco_idx, coco_name in enumerate(COCO_CLASSES):
-        # Handle naming differences
         if voc_name == coco_name:
             COCO_TO_VOC[coco_idx] = voc_idx
         elif voc_name == 'aeroplane' and coco_name == 'airplane':
@@ -68,10 +50,8 @@ print(f"COCO to VOC mapping: {COCO_TO_VOC}")
 print(f"Mapped {len(COCO_TO_VOC)} classes from COCO to VOC")
 
 def find_pascal_voc():
-    """Find already downloaded Pascal VOC 2007 dataset"""
     print("Looking for Pascal VOC 2007 dataset...")
     
-    # Start from current directory and search
     base_path = Path("./data/pascal-voc-2007")
     
     if not base_path.exists():
@@ -82,11 +62,9 @@ def find_pascal_voc():
     
     print(f"Searching in: {base_path.absolute()}")
     
-    # Search recursively for JPEGImages and Annotations folders
     for root, dirs, files in os.walk(base_path):
         if "JPEGImages" in dirs and "Annotations" in dirs:
             voc_path = Path(root)
-            # Verify it has actual data
             jpeg_dir = voc_path / "JPEGImages"
             anno_dir = voc_path / "Annotations"
             
@@ -104,12 +82,7 @@ def find_pascal_voc():
         f"Please check the dataset structure."
     )
 
-# ============================================================================
-# STEP 2: Load Dataset Annotations
-# ============================================================================
-
 def parse_voc_annotation(xml_file):
-    """Parse Pascal VOC XML annotation file"""
     tree = ET.parse(xml_file)
     root = tree.getroot()
     
@@ -141,11 +114,9 @@ def parse_voc_annotation(xml_file):
     }
 
 def load_dataset(voc_path, num_images=100):
-    """Load a subset of Pascal VOC dataset"""
     image_dir = Path(voc_path) / "JPEGImages"
     anno_dir = Path(voc_path) / "Annotations"
     
-    # Get list of images
     image_files = sorted(list(image_dir.glob("*.jpg")))[:num_images]
     
     dataset = []
@@ -162,43 +133,31 @@ def load_dataset(voc_path, num_images=100):
     print(f"Loaded {len(dataset)} images")
     return dataset
 
-# ============================================================================
-# STEP 3: Load Pre-trained Models
-# ============================================================================
 
 def load_models():
-    """Load YOLO and RT-DETR models"""
     print("\nLoading models...")
     
-    # YOLOv8 model
     yolo_model = YOLO('yolov8n.pt')
     print("✓ YOLOv8 loaded")
     
-    # RT-DETR model
     rtdetr_model = YOLO('rtdetr-l.pt')
     print("✓ RT-DETR loaded")
     
     return yolo_model, rtdetr_model
 
-# ============================================================================
-# STEP 4: Run Inference
-# ============================================================================
 
 def run_inference(model, dataset, model_name):
-    """Run inference on dataset"""
     print(f"\nRunning {model_name} inference...")
     
     predictions = []
     for item in tqdm(dataset):
         results = model(item['image_path'], verbose=False)
         
-        # Extract predictions
         result = results[0]
-        boxes = result.boxes.xyxy.cpu().numpy()  # x1, y1, x2, y2
+        boxes = result.boxes.xyxy.cpu().numpy()  
         scores = result.boxes.conf.cpu().numpy()
         coco_classes = result.boxes.cls.cpu().numpy().astype(int)
         
-        # Convert COCO classes to VOC classes
         voc_boxes = []
         voc_scores = []
         voc_labels = []
@@ -218,12 +177,9 @@ def run_inference(model, dataset, model_name):
     
     return predictions
 
-# ============================================================================
-# STEP 5: Calculate IoU and mAP
-# ============================================================================
+
 
 def calculate_iou(box1, box2):
-    """Calculate Intersection over Union"""
     x1 = max(box1[0], box2[0])
     y1 = max(box1[1], box2[1])
     x2 = min(box1[2], box2[2])
@@ -237,8 +193,6 @@ def calculate_iou(box1, box2):
     return intersection / union if union > 0 else 0
 
 def calculate_ap(predictions, ground_truths, class_id, iou_threshold=0.5):
-    """Calculate Average Precision for a single class"""
-    # Collect all predictions and ground truths for this class
     pred_list = []
     for pred in predictions:
         mask = pred['labels'] == class_id
@@ -250,30 +204,25 @@ def calculate_ap(predictions, ground_truths, class_id, iou_threshold=0.5):
                     'score': pred['scores'][i]
                 })
     
-    # Sort by confidence
     pred_list.sort(key=lambda x: x['score'], reverse=True)
     
-    # Count ground truth objects
     n_gt = sum([np.sum(gt['annotations']['labels'] == class_id) 
                 for gt in ground_truths])
     
     if n_gt == 0 or len(pred_list) == 0:
         return 0.0
     
-    # Match predictions to ground truths
     tp = np.zeros(len(pred_list))
     fp = np.zeros(len(pred_list))
     
     gt_matched = {gt['image_id']: [] for gt in ground_truths}
     
     for i, pred in enumerate(pred_list):
-        # Find ground truth for this image
         gt = next((g for g in ground_truths if g['image_id'] == pred['image_id']), None)
         if gt is None:
             fp[i] = 1
             continue
         
-        # Find matching ground truth boxes
         gt_boxes = gt['annotations']['boxes'][gt['annotations']['labels'] == class_id]
         
         max_iou = 0
@@ -292,13 +241,11 @@ def calculate_ap(predictions, ground_truths, class_id, iou_threshold=0.5):
         else:
             fp[i] = 1
     
-    # Calculate precision and recall
     tp_cumsum = np.cumsum(tp)
     fp_cumsum = np.cumsum(fp)
     recalls = tp_cumsum / n_gt
     precisions = tp_cumsum / (tp_cumsum + fp_cumsum)
     
-    # Calculate AP (11-point interpolation)
     ap = 0
     for t in np.linspace(0, 1, 11):
         if np.sum(recalls >= t) == 0:
@@ -310,7 +257,6 @@ def calculate_ap(predictions, ground_truths, class_id, iou_threshold=0.5):
     return ap
 
 def calculate_map(predictions, ground_truths, iou_threshold=0.5):
-    """Calculate mean Average Precision"""
     aps = []
     for class_id in range(len(VOC_CLASSES)):
         ap = calculate_ap(predictions, ground_truths, class_id, iou_threshold)
@@ -321,34 +267,26 @@ def calculate_map(predictions, ground_truths, iou_threshold=0.5):
     mean_ap = np.mean(aps)
     return mean_ap, aps
 
-# ============================================================================
-# STEP 6: Find Failure Cases
-# ============================================================================
+
 
 def calculate_image_score(pred, gt):
-    """Calculate F1 score for a single image using 1-to-1 matching"""
     gt_boxes = gt['annotations']['boxes']
     gt_labels = gt['annotations']['labels']
     
     if len(gt_boxes) == 0:
-        # No ground truth: score is 1.0 if no predictions, 0.0 if any predictions
         return 1.0 if len(pred['boxes']) == 0 else 0.0
     
     if len(pred['boxes']) == 0:
-        # No predictions but ground truth exists
         return 0.0
     
-    # Track which GT boxes have been matched (1-to-1 matching)
     gt_matched = set()
-    tp = 0  # True positives
+    tp = 0  
     
-    # For each prediction, find best matching GT box (greedy approach)
     for pred_box, pred_label in zip(pred['boxes'], pred['labels']):
         best_iou = 0
         best_gt_idx = -1
         
         for gt_idx, (gt_box, gt_label) in enumerate(zip(gt_boxes, gt_labels)):
-            # Skip if GT already matched or class doesn't match
             if gt_idx in gt_matched or pred_label != gt_label:
                 continue
             
@@ -357,16 +295,13 @@ def calculate_image_score(pred, gt):
                 best_iou = iou
                 best_gt_idx = gt_idx
         
-        # If IoU >= 0.5, count as true positive
         if best_iou >= 0.5:
             tp += 1
             gt_matched.add(best_gt_idx)
     
-    # Calculate metrics
-    fp = len(pred['boxes']) - tp  # False positives
-    fn = len(gt_boxes) - tp  # False negatives (unmatched GT)
+    fp = len(pred['boxes']) - tp  
+    fn = len(gt_boxes) - tp  
     
-    # Calculate F1 score
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     
@@ -377,7 +312,6 @@ def calculate_image_score(pred, gt):
     return f1
 
 def find_failure_cases(yolo_preds, rtdetr_preds, ground_truths):
-    """Find images where one model fails and the other succeeds"""
     scores = []
     
     for yolo_pred, rtdetr_pred, gt in zip(yolo_preds, rtdetr_preds, ground_truths):
@@ -395,40 +329,30 @@ def find_failure_cases(yolo_preds, rtdetr_preds, ground_truths):
             'rtdetr_pred': rtdetr_pred
         })
     
-    # Filter out ties (where both models perform equally)
-    # Only keep cases where there's a meaningful difference
+
     meaningful_diff = [s for s in scores if abs(s['diff']) > 0.01]
     
-    # Sort by difference
     meaningful_diff.sort(key=lambda x: x['diff'])
     
-    # YOLO fails, RT-DETR succeeds (positive diff)
     yolo_fails = meaningful_diff[-10:] if len(meaningful_diff) >= 10 else meaningful_diff
     
-    # RT-DETR fails, YOLO succeeds (negative diff)
     rtdetr_fails = meaningful_diff[:10] if len(meaningful_diff) >= 10 else []
     
     return yolo_fails, rtdetr_fails
 
-# ============================================================================
-# STEP 7: Analyze Trends
-# ============================================================================
 
 def analyze_failure_trends(failure_cases, title):
-    """Analyze why models fail on specific images"""
     print(f"\n{title}")
     print("=" * 60)
     
     for i, case in enumerate(failure_cases):
         gt = case['gt']['annotations']
         
-        # Calculate object sizes
         if len(gt['boxes']) > 0:
             areas = [(box[2]-box[0]) * (box[3]-box[1]) for box in gt['boxes']]
             avg_area = np.mean(areas)
             min_area = np.min(areas)
             
-            # Categorize
             has_small = any(area < 32*32 for area in areas)
             has_large = any(area > 96*96 for area in areas)
             num_objects = len(gt['boxes'])
@@ -442,17 +366,13 @@ def analyze_failure_trends(failure_cases, title):
             print(f"  Large objects: {has_large}")
             print(f"  Crowded: {num_objects > 5}")
 
-# ============================================================================
-# STEP 8: Visualize Results
-# ============================================================================
+
 
 def visualize_comparison(case, save_path):
-    """Visualize ground truth vs predictions"""
     img = Image.open(case['image_path'])
     
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     
-    # Ground truth
     axes[0].imshow(img)
     axes[0].set_title('Ground Truth', fontsize=20, fontweight='bold', pad=15)
     for box, label in zip(case['gt']['annotations']['boxes'], 
@@ -465,7 +385,6 @@ def visualize_comparison(case, save_path):
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
     axes[0].axis('off')
     
-    # YOLO prediction
     axes[1].imshow(img)
     axes[1].set_title('YOLO', fontsize=20, fontweight='bold', pad=15)
     for box, label, score in zip(case['yolo_pred']['boxes'],
@@ -479,7 +398,6 @@ def visualize_comparison(case, save_path):
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
     axes[1].axis('off')
     
-    # RT-DETR prediction
     axes[2].imshow(img)
     axes[2].set_title('RT-DETR', fontsize=20, fontweight='bold', pad=15)
     for box, label, score in zip(case['rtdetr_pred']['boxes'],
@@ -498,23 +416,16 @@ def visualize_comparison(case, save_path):
     plt.close()
     print(f"Saved: {save_path}")
 
-# ============================================================================
-# MAIN EXECUTION
-# ============================================================================
 
 def main():
-    # Find and load dataset
     voc_path = find_pascal_voc()
-    dataset = load_dataset(voc_path, num_images=100)  # Use 100 images
+    dataset = load_dataset(voc_path, num_images=100)  
     
-    # Load models
     yolo_model, rtdetr_model = load_models()
     
-    # Run inference
     yolo_predictions = run_inference(yolo_model, dataset, "YOLO")
     rtdetr_predictions = run_inference(rtdetr_model, dataset, "RT-DETR")
     
-    # Calculate mAP
     print("\n" + "="*60)
     print("YOLO mAP@0.5:")
     yolo_map, yolo_aps = calculate_map(yolo_predictions, dataset, iou_threshold=0.5)
@@ -525,18 +436,15 @@ def main():
     rtdetr_map, rtdetr_aps = calculate_map(rtdetr_predictions, dataset, iou_threshold=0.5)
     print(f"\nRT-DETR Mean AP: {rtdetr_map:.3f}")
     
-    # Find failure cases
     print("\n" + "="*60)
     print("Finding failure cases...")
     yolo_fails, rtdetr_fails = find_failure_cases(yolo_predictions, 
                                                    rtdetr_predictions, 
                                                    dataset)
     
-    # Analyze trends
     analyze_failure_trends(yolo_fails, "Cases where YOLO FAILS, RT-DETR SUCCEEDS")
     analyze_failure_trends(rtdetr_fails, "Cases where RT-DETR FAILS, YOLO SUCCEEDS")
     
-    # Visualize all failure cases
     print("\n" + "="*60)
     print("Generating visualizations...")
     os.makedirs("images/YOLO", exist_ok=True)

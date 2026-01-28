@@ -22,7 +22,6 @@ The model does not need to be trained to converge.
 
 
 class IMDBDataset(Dataset):
-    """Dataset that creates Q&A pairs from IMDB movie data"""
     def __init__(self, csv_path, tokenizer, max_length=128):
         self.df = pd.read_csv(csv_path)
         self.tokenizer = tokenizer
@@ -30,7 +29,6 @@ class IMDBDataset(Dataset):
         self.qa_pairs = self._create_qa_pairs()
     
     def _create_qa_pairs(self):
-        """Create question-answer pairs from movie data"""
         qa_pairs = []
         
         for _, row in self.df.iterrows():
@@ -42,7 +40,6 @@ class IMDBDataset(Dataset):
             overview = str(row['Overview']) if pd.notna(row['Overview']) else "Unknown"
             year = str(row['Released_Year']) if pd.notna(row['Released_Year']) else "Unknown"
             
-            # Create various Q&A pairs
             qa_pairs.append({
                 'question': f"Who directed {title}?",
                 'answer': director
@@ -72,7 +69,6 @@ class IMDBDataset(Dataset):
     def __getitem__(self, idx):
         pair = self.qa_pairs[idx]
         
-        # Tokenize question
         input_encoding = self.tokenizer(
             pair['question'],
             max_length=self.max_length,
@@ -81,7 +77,6 @@ class IMDBDataset(Dataset):
             return_tensors='pt'
         )
         
-        # Tokenize answer
         target_encoding = self.tokenizer(
             pair['answer'],
             max_length=self.max_length,
@@ -108,7 +103,6 @@ class SimpleChatbot(nn.Module):
 
     def generate(self, question, tokenizer, max_length=50):
         inputs = tokenizer.encode(question, return_tensors='pt')
-        # Move inputs to the same device as the model
         device = next(self.parameters()).device
         inputs = inputs.to(device)
         outputs = self.transformer.generate(inputs, max_length=max_length)
@@ -117,7 +111,6 @@ class SimpleChatbot(nn.Module):
 
 
 def train_chatbot(model, train_loader, tokenizer, epochs=3, lr=5e-5):
-    """Train the chatbot on IMDB data"""
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
@@ -133,7 +126,6 @@ def train_chatbot(model, train_loader, tokenizer, epochs=3, lr=5e-5):
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
             
-            # For seq2seq models, pass labels and let the model handle loss computation
             outputs = model.transformer(
                 input_ids=input_ids, 
                 attention_mask=attention_mask,
@@ -142,7 +134,6 @@ def train_chatbot(model, train_loader, tokenizer, epochs=3, lr=5e-5):
             
             loss = outputs.loss
             
-            # Backward pass
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -159,18 +150,12 @@ def train_chatbot(model, train_loader, tokenizer, epochs=3, lr=5e-5):
     
 
 if __name__ == "__main__":
-    # Options for better chatbot models:
-    # 1. "google/flan-t5-small" - T5 fine-tuned for instructions/QA
-    # 2. "facebook/blenderbot-400M-distill" - Conversational model
-    # 3. "google/flan-t5-base" - Larger, better instruction following
-    
-    model_name = "google/flan-t5-small"  # Better for Q&A tasks
+    model_name = "google/flan-t5-small" 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     transformer_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
     chatbot = SimpleChatbot(transformer_model)
     
-    # Load IMDB dataset
     data_path = Path(__file__).parent.parent.parent / "data" / "imdb" / "imdb_top_1000.csv"
     print(f"Loading dataset from: {data_path}")
     
@@ -179,11 +164,9 @@ if __name__ == "__main__":
     
     print(f"Dataset size: {len(dataset)} Q&A pairs")
     
-    # Train the model (just a few epochs since it doesn't need to converge)
     print("\nTraining chatbot on IMDB data...")
     chatbot = train_chatbot(chatbot, train_loader, tokenizer, epochs=2, lr=5e-5)
     
-    # Test the chatbot
     print("\n" + "="*50)
     print("Testing chatbot:")
     print("="*50)
