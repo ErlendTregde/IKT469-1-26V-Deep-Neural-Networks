@@ -28,7 +28,23 @@ This project implements two approaches for learning image embeddings from scratc
 
 ## Installation
 
-1. Install required packages:
+This project uses [uv](https://github.com/astral-sh/uv) for fast dependency management.
+
+1. Install uv (if not already installed):
+```bash
+pip install uv
+```
+
+2. Install dependencies:
+```bash
+# On Windows
+python -m uv sync
+
+# On Linux/Mac (if uv is in PATH)
+uv sync
+```
+
+Alternatively, if you prefer pip:
 ```bash
 pip install -r requirements.txt
 ```
@@ -40,6 +56,10 @@ pip install -r requirements.txt
 To run both Part A1 and A2 with comparison:
 
 ```bash
+# With uv (recommended)
+python -m uv run assignment_4a.py
+
+# Or with Python directly
 python assignment_4a.py
 ```
 
@@ -54,12 +74,17 @@ This will:
 
 **Part A1 only (Autoencoder):**
 ```bash
-python autoencoder_embeddings.py
+python -m uv run autoencoder_embeddings.py
 ```
 
 **Part A2 only (Contrastive Learning):**
 ```bash
-python contrastive_embeddings.py
+python -m uv run contrastive_embeddings.py
+```
+
+**Quick test (3 epochs):**
+```bash
+python -m uv run quick_start.py
 ```
 
 ## Configuration
