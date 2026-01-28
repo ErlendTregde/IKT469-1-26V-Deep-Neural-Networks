@@ -45,7 +45,7 @@ def train_one_epoch(model, train_loader, optimizer, criterion, device):
     return avg_loss, accuracy
 
 
-def train(model, epochs=10, lr=0.001, criterion=None, delete_loaders=True, save_dir='trained'):
+def train(model, epochs=10, lr=0.001, criterion=None, delete_loaders=True, save_dir='trained', run_name=None):
     model = model.to(device, non_blocking=True)
     train_loader = model.train_loader
     val_loader = model.val_loader
@@ -57,7 +57,14 @@ def train(model, epochs=10, lr=0.001, criterion=None, delete_loaders=True, save_
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-    writer = SummaryWriter(f'runs/{model.get_name()}_{timestamp}')
+    
+    # Use custom run_name if provided, otherwise use default
+    if run_name:
+        tensorboard_dir = f'runs/{run_name}'
+    else:
+        tensorboard_dir = f'runs/{model.get_name()}_{timestamp}'
+    
+    writer = SummaryWriter(tensorboard_dir)
 
     print(f"Training on {device}")
     print(f"Model: {model.get_name()}")
