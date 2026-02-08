@@ -1,7 +1,0 @@
-﻿# Data files
-data/
-*.pyc
-__pycache__/
-.venv/
-results/
-quick_test/

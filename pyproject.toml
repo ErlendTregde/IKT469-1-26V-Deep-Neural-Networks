@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "clip",
     "kagglehub>=0.3.13",
     "matplotlib>=3.10.8",
     "opencv-python-headless>=4.13.0.90",
@@ -15,3 +16,6 @@ dependencies = [
     "torchvision>=0.24.1",
     "ultralytics>=8.4.7",
 ]
+
+[tool.uv.sources]
+clip = { git = "https://github.com/openai/CLIP.git" }

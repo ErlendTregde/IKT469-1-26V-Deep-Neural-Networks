@@ -1,12 +1,3 @@
-"""
-Assignment 4A: Main script to run both Part A1 (Autoencoder) and Part A2 (Contrastive) experiments.
-
-This script covers ASSIGNMENT 4A ONLY.
-Parts 4B and 4C should be implemented in separate files.
-
-Generates all required visualizations and comparisons for Part A.
-"""
-
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,24 +8,15 @@ import os
 
 def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
                       contrastive_embeddings, contrastive_labels, save_dir='results'):
-    """
-    Compare the two embedding approaches side by side.
-    """
     from sklearn.manifold import TSNE
     
-    print("\n" + "="*80)
-    print("COMPARING EMBEDDING APPROACHES")
-    print("="*80)
     
-    # Ensure we're comparing the same samples
     min_samples = min(len(autoencoder_embeddings), len(contrastive_embeddings))
     autoencoder_embeddings = autoencoder_embeddings[:min_samples]
     autoencoder_labels = autoencoder_labels[:min_samples]
     contrastive_embeddings = contrastive_embeddings[:min_samples]
     contrastive_labels = contrastive_labels[:min_samples]
     
-    # Compute t-SNE for both
-    print("Computing t-SNE projections for comparison...")
     tsne = TSNE(n_components=2, random_state=42, perplexity=30)
     
     ae_2d = tsne.fit_transform(autoencoder_embeddings)
@@ -42,10 +24,8 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     tsne = TSNE(n_components=2, random_state=42, perplexity=30)
     cont_2d = tsne.fit_transform(contrastive_embeddings)
     
-    # Create side-by-side comparison
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     
-    # Autoencoder embeddings
     scatter1 = axes[0].scatter(ae_2d[:, 0], ae_2d[:, 1], 
                               c=autoencoder_labels, cmap='tab10', alpha=0.6, s=5)
     axes[0].set_title('Autoencoder Embeddings', fontsize=14, fontweight='bold')
@@ -53,7 +33,6 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     axes[0].set_ylabel('t-SNE dimension 2')
     plt.colorbar(scatter1, ax=axes[0], label='Class')
     
-    # Contrastive embeddings
     scatter2 = axes[1].scatter(cont_2d[:, 0], cont_2d[:, 1], 
                               c=contrastive_labels, cmap='tab10', alpha=0.6, s=5)
     axes[1].set_title('Contrastive Embeddings', fontsize=14, fontweight='bold')
@@ -69,10 +48,6 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     print(f"Saved comparison visualization to {comparison_path}")
     plt.show()
     
-    # Calculate embedding statistics
-    print("\n" + "="*80)
-    print("EMBEDDING STATISTICS")
-    print("="*80)
     
     print("\nAutoencoder Embeddings:")
     print(f"  Shape: {autoencoder_embeddings.shape}")
@@ -88,11 +63,9 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     print(f"  Min: {np.min(contrastive_embeddings):.6f}")
     print(f"  Max: {np.max(contrastive_embeddings):.6f}")
     
-    # Calculate within-class vs between-class distances
     from scipy.spatial.distance import cdist
     
     def calculate_class_distances(embeddings, labels, num_samples=500):
-        """Calculate within-class and between-class distances"""
         indices = np.random.choice(len(embeddings), min(num_samples, len(embeddings)), replace=False)
         sample_embeddings = embeddings[indices]
         sample_labels = labels[indices]
@@ -110,7 +83,6 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
         
         return within_class_dists, between_class_dists
     
-    print("\nCalculating class separation metrics...")
     ae_within, ae_between = calculate_class_distances(autoencoder_embeddings, autoencoder_labels)
     cont_within, cont_between = calculate_class_distances(contrastive_embeddings, contrastive_labels)
     
@@ -125,10 +97,8 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     print(f"  Between-class distance: {np.mean(cont_between):.4f} ± {np.std(cont_between):.4f}")
     print(f"  Separation ratio: {np.mean(cont_between) / np.mean(cont_within):.4f}")
     
-    # Plot distance distributions
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     
-    # Autoencoder
     axes[0].hist(ae_within, bins=30, alpha=0.5, label='Within-class', color='green')
     axes[0].hist(ae_between, bins=30, alpha=0.5, label='Between-class', color='red')
     axes[0].set_xlabel('Distance')
@@ -137,7 +107,6 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
     
-    # Contrastive
     axes[1].hist(cont_within, bins=30, alpha=0.5, label='Within-class', color='green')
     axes[1].hist(cont_between, bins=30, alpha=0.5, label='Between-class', color='red')
     axes[1].set_xlabel('Distance')
@@ -154,16 +123,13 @@ def compare_embeddings(autoencoder_embeddings, autoencoder_labels,
 
 
 def main():
-    """
-    Main function to run all experiments.
-    """
+
     print("="*80)
     print("ASSIGNMENT 4A: LEARNING IMAGE EMBEDDINGS FROM SCRATCH")
     print("Parts 4B and 4C are implemented separately")
     print("="*80)
     
-    # Configuration
-    DATASET = 'CIFAR10'  # Options: 'CIFAR10', 'FashionMNIST', 'MNIST'
+    DATASET = 'CIFAR10'
     LATENT_DIM = 32
     EMBEDDING_DIM = 32
     NUM_EPOCHS = 10
@@ -176,10 +142,8 @@ def main():
     print(f"  Batch size: {BATCH_SIZE}")
     print(f"  Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
     
-    # Create main results directory
     os.makedirs('results', exist_ok=True)
     
-    # Part A1: Autoencoder
     print("\n" + "="*80)
     print("PART A1: AUTOENCODER-BASED IMAGE EMBEDDINGS")
     print("="*80)
@@ -192,7 +156,6 @@ def main():
         save_dir='results/autoencoder'
     )
     
-    # Part A2: Contrastive Learning
     print("\n" + "="*80)
     print("PART A2: CONTRASTIVE IMAGE EMBEDDINGS")
     print("="*80)
@@ -206,7 +169,6 @@ def main():
         save_dir='results/contrastive'
     )
     
-    # Compare both approaches
     compare_embeddings(ae_embeddings, ae_labels, 
                       cont_embeddings, cont_labels,
                       save_dir='results')
@@ -240,5 +202,48 @@ def main():
     print("  ✓ Distance distribution comparison")
 
 
-if __name__ == "__main__":
+def run_part_a():
     main()
+
+
+def run_part_b():
+    print("\n" + "="*80)
+    print("PART B: Foundation Model Image Embeddings")
+    print("="*80)
+    
+    from foundation_embeddings import run_clip_experiment
+    embeddings, labels = run_clip_experiment()
+    
+    return embeddings, labels
+
+
+def run_full_assignment():
+    print("\n" + "="*80)
+    print("RUNNING FULL ASSIGNMENT 4: Parts A + B + Comparison")
+    print("="*80)
+    
+    from compare_all_embeddings import run_full_comparison
+    run_full_comparison()
+    
+    print("\n" + "="*80)
+    print("Full assignment completed!")
+    print("="*80)
+
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "parta":
+            run_part_a()
+        elif sys.argv[1] == "partb":
+            run_part_b()
+        elif sys.argv[1] == "full":
+            run_full_assignment()
+        else:
+            print("Usage: python assignment_4a.py [parta|partb|full]")
+            print("  parta - Run Part A only (Autoencoder + Contrastive)")
+            print("  partb - Run Part B only (CLIP)")
+            print("  full  - Run everything with full comparison")
+    else:
+        run_part_a()

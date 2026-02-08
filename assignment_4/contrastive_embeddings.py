@@ -1,11 +1,3 @@
-"""
-Assignment 4A - Part A2: Contrastive Image Embeddings
-
-Implements contrastive learning for image embeddings using positive/negative pairs.
-
-This is Part A of Assignment 4. Parts B and C are implemented separately.
-"""
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -20,16 +12,11 @@ import random
 
 
 class ContrastiveDataset(Dataset):
-    """
-    Dataset that creates positive and negative pairs for contrastive learning.
-    Positive pairs: same class
-    Negative pairs: different class
-    """
+
     def __init__(self, base_dataset, num_pairs_per_sample=2):
         self.base_dataset = base_dataset
         self.num_pairs_per_sample = num_pairs_per_sample
         
-        # Create label-to-indices mapping for efficient pair sampling
         self.label_to_indices = {}
         for idx, (_, label) in enumerate(base_dataset):
             if label not in self.label_to_indices:
@@ -42,20 +29,16 @@ class ContrastiveDataset(Dataset):
         return len(self.base_dataset) * self.num_pairs_per_sample
     
     def __getitem__(self, idx):
-        # Get anchor image
         anchor_idx = idx % len(self.base_dataset)
         anchor_img, anchor_label = self.base_dataset[anchor_idx]
         
-        # Decide if we create positive or negative pair (50/50)
         is_positive = random.random() > 0.5
         
         if is_positive:
-            # Positive pair: same class
             positive_idx = random.choice(self.label_to_indices[anchor_label])
             pair_img, _ = self.base_dataset[positive_idx]
             label = 1.0
         else:
-            # Negative pair: different class
             negative_labels = [l for l in self.labels if l != anchor_label]
             negative_label = random.choice(negative_labels)
             negative_idx = random.choice(self.label_to_indices[negative_label])
@@ -66,10 +49,7 @@ class ContrastiveDataset(Dataset):
 
 
 class ContrastiveEmbeddingNet(nn.Module):
-    """
-    Embedding network for contrastive learning.
-    Maps images to embedding space where similar images are close.
-    """
+
     def __init__(self, input_dim=784, embedding_dim=32):
         super(ContrastiveEmbeddingNet, self).__init__()
         
@@ -84,36 +64,24 @@ class ContrastiveEmbeddingNet(nn.Module):
         )
     
     def forward(self, x):
-        """Forward pass to get embeddings"""
         return self.embedding_net(x)
     
     def get_embedding(self, x):
-        """Get normalized embeddings"""
         embedding = self.forward(x)
-        # L2 normalization
         return F.normalize(embedding, p=2, dim=1)
 
 
 class ContrastiveLoss(nn.Module):
-    """
-    Contrastive loss function.
-    Pulls positive pairs together and pushes negative pairs apart.
-    """
+
     def __init__(self, margin=1.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
     
     def forward(self, embedding1, embedding2, label):
-        """
-        Args:
-            embedding1: embeddings of first images in pairs
-            embedding2: embeddings of second images in pairs
-            label: 1 for positive pairs, 0 for negative pairs
-        """
-        # Euclidean distance between embeddings
+
         distance = F.pairwise_distance(embedding1, embedding2)
         
-        # Contrastive loss
+
         loss_positive = label * torch.pow(distance, 2)
         loss_negative = (1 - label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2)
         
@@ -122,9 +90,7 @@ class ContrastiveLoss(nn.Module):
 
 
 def train_contrastive(model, train_loader, num_epochs=10, lr=0.001, margin=1.0, device='cpu'):
-    """
-    Train the contrastive embedding model.
-    """
+
     model = model.to(device)
     criterion = ContrastiveLoss(margin=margin)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -171,9 +137,7 @@ def train_contrastive(model, train_loader, num_epochs=10, lr=0.001, margin=1.0, 
 
 
 def extract_contrastive_embeddings(model, data_loader, device='cpu'):
-    """
-    Extract embeddings and labels from the dataset.
-    """
+
     model.eval()
     embeddings = []
     labels = []
@@ -192,9 +156,7 @@ def extract_contrastive_embeddings(model, data_loader, device='cpu'):
 
 
 def visualize_contrastive_embeddings(embeddings, labels, title="Contrastive Embeddings", save_path=None):
-    """
-    Visualize embeddings using t-SNE.
-    """
+
     print("Computing t-SNE projection...")
     tsne = TSNE(n_components=2, random_state=42, perplexity=30)
     embeddings_2d = tsne.fit_transform(embeddings)
@@ -216,14 +178,12 @@ def visualize_contrastive_embeddings(embeddings, labels, title="Contrastive Embe
 
 
 def visualize_embedding_distances(model, test_dataset, device='cpu', num_samples=100, save_path=None):
-    """
-    Visualize distance distributions for positive and negative pairs.
-    """
+
     model.eval()
     positive_distances = []
     negative_distances = []
     
-    # Sample pairs
+
     label_to_indices = {}
     for idx in range(len(test_dataset)):
         _, label = test_dataset[idx]
@@ -284,9 +244,7 @@ def visualize_embedding_distances(model, test_dataset, device='cpu', num_samples
 
 def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32, 
                                num_epochs=10, batch_size=256, margin=1.0, save_dir='results'):
-    """
-    Run complete contrastive learning experiment.
-    """
+
     # Create results directory
     os.makedirs(save_dir, exist_ok=True)
     
@@ -320,7 +278,6 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
     
-    # Create contrastive datasets
     train_dataset = ContrastiveDataset(train_dataset_base, num_pairs_per_sample=2)
     test_dataset = ContrastiveDataset(test_dataset_base, num_pairs_per_sample=1)
     
@@ -332,7 +289,6 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
     print(f"Test pairs: {len(test_dataset)}")
     print(f"Input dimension: {input_dim}")
     
-    # Create and train model
     model = ContrastiveEmbeddingNet(input_dim=input_dim, embedding_dim=embedding_dim)
     print(f"\nModel architecture:")
     print(model)
@@ -342,7 +298,6 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
     losses = train_contrastive(model, train_loader, num_epochs=num_epochs, 
                               lr=0.001, margin=margin, device=device)
     
-    # Plot training loss
     plt.figure(figsize=(8, 5))
     plt.plot(losses)
     plt.xlabel('Epoch')
@@ -354,7 +309,6 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
     print(f"\nSaved loss plot to {loss_path}")
     plt.show()
     
-    # Extract embeddings (use base test dataset, not contrastive pairs)
     print("\nExtracting embeddings from test set...")
     base_test_loader = DataLoader(test_dataset_base, batch_size=batch_size, 
                                    shuffle=False, num_workers=0)
@@ -373,18 +327,15 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
     labels = np.concatenate(labels)
     print(f"Embedding shape: {embeddings.shape}")
     
-    # Visualize embeddings
     emb_path = os.path.join(save_dir, 'contrastive_embeddings.png')
     visualize_contrastive_embeddings(embeddings, labels, 
                                      title=f"Contrastive Embeddings ({dataset_name}, dim={embedding_dim})",
                                      save_path=emb_path)
     
-    # Visualize distance distributions
     dist_path = os.path.join(save_dir, 'contrastive_distances.png')
     visualize_embedding_distances(model, test_dataset_base, device=device, 
                                   num_samples=200, save_path=dist_path)
     
-    # Save model
     model_path = os.path.join(save_dir, 'contrastive_model.pth')
     torch.save(model.state_dict(), model_path)
     print(f"\nSaved model to {model_path}")
@@ -393,7 +344,6 @@ def run_contrastive_experiment(dataset_name='CIFAR10', embedding_dim=32,
 
 
 if __name__ == "__main__":
-    # Run experiment
     model, embeddings, labels = run_contrastive_experiment(
         dataset_name='CIFAR10',
         embedding_dim=32,
