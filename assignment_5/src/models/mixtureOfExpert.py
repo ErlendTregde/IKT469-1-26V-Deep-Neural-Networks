@@ -2,10 +2,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.resnet import ResNet
-from models.inception import InceptionNet
-from models.squeezenet import SqueezeNet
-from models.custom import custom_model
+from .resnet import ResNet
+from .inception import InceptionNet
+from .squeezenet import SqueezeNet
+from .custom import custom_model
 
 class Router(nn.Module):
     """

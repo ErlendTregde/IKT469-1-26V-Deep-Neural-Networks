@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.modules import InceptionBlock
+from .modules import InceptionBlock
 
 class InceptionNet(nn.Module):
     def __init__(self, input_channels=1, num_classes=10):

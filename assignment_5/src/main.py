@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
-from data import get_data
-from models.cnn import CNNModel
-from models.inception import InceptionNet
-from models.squeezenet import SqueezeNet
-from models.resnet import ResNet
-from models.custom import custom_model
-from models.mixtureOfExpert import MixtureOfExperts
+from .data import get_data, get_cifar10_data
+from .models.cnn import CNNModel
+from .models.inception import InceptionNet
+from .models.squeezenet import SqueezeNet
+from .models.resnet import ResNet
+from .models.custom import custom_model
+from .models.mixtureOfExpert import MixtureOfExperts
 import torch.optim as optim
 import argparse
 from datetime import datetime
@@ -163,24 +163,31 @@ if __name__ == "__main__":
     args = argparse.ArgumentParser(description="Train models")
 
     args.add_argument("--model", type=str, choices=["cnn", "inception", "squeezenet", "custom", "resnet", "mixtureOfExpert"], default="cnn", help="Model to train")
+    args.add_argument("--dataset", type=str, choices=["fashion-mnist", "cifar10"], default="fashion-mnist", help="Dataset to use")
     args.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     args.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     args = args.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_loader, test_loader = get_data()
-    model = CNNModel()
+    if args.dataset == "fashion-mnist":
+        train_loader, test_loader = get_data()
+        input_channels = 1
+    else:
+        train_loader, test_loader = get_cifar10_data()
+        input_channels = 3
+
+    model = CNNModel(input_channels=input_channels)
     if args.model == "cnn":
-        model = CNNModel()
+        model = CNNModel(input_channels=input_channels)
     elif args.model == "inception":
-        model = InceptionNet()
+        model = InceptionNet(input_channels=input_channels)
     elif args.model == "squeezenet":
-        model = SqueezeNet()
+        model = SqueezeNet(input_channels=input_channels)
     elif args.model == "custom":
-        model = custom_model()
+        model = custom_model(input_channels=input_channels)
     elif args.model == "resnet":
-        model = ResNet()
+        model = ResNet(input_channels=input_channels)
     elif args.model == "mixtureOfExpert":
         model = MixtureOfExperts(freeze_experts=True)
         model.load_expert_weights(0, "weights/best_resnet_model.pth", device)
@@ -194,10 +201,10 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     # Create TensorBoard writer with timestamped run name
-    run_name = f"{args.model}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_name = f"{args.model}_{args.dataset}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{run_name}")
 
-    print(f"training {args.model} on {args.epochs} epochs, with a learning rate of {args.lr}")
+    print(f"training {args.model} on {args.dataset} for {args.epochs} epochs, with a learning rate of {args.lr}")
     print(f"TensorBoard logs: runs/{run_name}")
 
     criterion_name = criterion.__class__.__name__
@@ -210,7 +217,7 @@ if __name__ == "__main__":
         criterion,
         optimizer,
         num_epochs=args.epochs,
-        save_path=f"best_{args.model}_model.pth",
+        save_path=f"weights/best_{args.model}_{args.dataset}_model.pth",
         writer=writer,
         model_name=args.model,
         lr=args.lr,

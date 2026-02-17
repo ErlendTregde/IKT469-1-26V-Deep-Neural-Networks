@@ -1,15 +1,15 @@
-from models.modules import InceptionBlock, ResidualBlock, FireModule
+from .modules import InceptionBlock, ResidualBlock, FireModule
 import torch
 import torch.nn as nn
 
 
 class custom_model(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, input_channels=1, num_classes=10):
         super(custom_model, self).__init__()
 
-        # Stem: 1 → 64 channels
+        # Stem: input_channels → 64 channels
         self.stem = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(input_channels, 64, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU()
         )

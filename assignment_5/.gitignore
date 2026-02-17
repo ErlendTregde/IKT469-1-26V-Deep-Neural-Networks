@@ -1,2 +1,4 @@
-!weights/
-!weights/best_resnet_model.pth
+# Exclude data and weights directories
+data/
+weights/
+runs/

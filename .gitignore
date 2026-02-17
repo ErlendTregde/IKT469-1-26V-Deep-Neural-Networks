@@ -68,11 +68,13 @@ ipython_config.py
 .DS_Store
 
 # Data files (keeping local datasets out of git)
+data/
 *.csv
 *.h5
 *.hdf5
 *.pkl
 *.pickle
+*.tar.gz
 
 # Model checkpoints
 *.pth

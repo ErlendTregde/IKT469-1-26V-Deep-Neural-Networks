@@ -1,6 +1,8 @@
 import kagglehub as hub
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
+import torchvision
+import torchvision.transforms as transforms
 
 path = hub.dataset_download("zalando-research/fashionmnist")
 
@@ -37,6 +39,41 @@ def get_data():
     test_loader = DataLoader(
         FashionMNISTDataset(test_data),
         batch_size=64,
+        shuffle=False,
+    )
+
+    return train_loader, test_loader
+
+
+def get_cifar10_data(data_dir='./data/cifar10', batch_size=64):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    train_dataset = torchvision.datasets.CIFAR10(
+        root=data_dir,
+        train=True,
+        download=True,
+        transform=transform
+    )
+
+    test_dataset = torchvision.datasets.CIFAR10(
+        root=data_dir,
+        train=False,
+        download=True,
+        transform=transform
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
         shuffle=False,
     )
 

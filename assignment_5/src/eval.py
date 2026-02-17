@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
-from data import get_data
-from models.cnn import CNNModel
-from models.inception import InceptionNet
-from models.squeezenet import SqueezeNet
-from models.resnet import ResNet
-from models.custom import custom_model
+from .data import get_data
+from .models.cnn import CNNModel
+from .models.inception import InceptionNet
+from .models.squeezenet import SqueezeNet
+from .models.resnet import ResNet
+from .models.custom import custom_model
 import argparse
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 import numpy as np
