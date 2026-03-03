@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument("--patch_size", type=int, default=8)
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--d_state", type=int, default=16)
+    parser.add_argument("--d_conv", type=int, default=4)
     parser.add_argument("--num_layers", type=int, default=4)
     parser.add_argument("--expand", type=int, default=2)
     parser.add_argument("--max_classes", type=int, default=20)
@@ -44,6 +45,7 @@ def main():
         patch_size=args.patch_size,
         d_model=args.d_model,
         d_state=args.d_state,
+        d_conv=args.d_conv,
         num_layers=args.num_layers,
         expand=args.expand,
     ).to(device)
